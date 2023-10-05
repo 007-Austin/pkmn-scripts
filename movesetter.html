@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Move Setter</title>
+    <link rel="icon" href="https://archives.bulbagarden.net/media/upload/4/4c/Spr_FRLG_Oak.png" type="image/x-icon">
+    <!-- <link rel="stylesheet" href="style.css"> -->
+    <!-- <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@700" rel="stylesheet"> -->
+    <!-- <link rel="stylesheet" href="./styles/css-pokemon-gameboy.css"> -->
+    <!-- <link href="styles.css" rel="stylesheet" \> -->
+    <style>
+        body {
+            background-color: rgb(255, 145, 0);
+         
+        }
+
+
+        .square {
+            width: 1120px;
+            height: 1008px;
+            padding-top: 100%;
+            padding-left: 400px;
+            background-color: #ccc;
+        }
+        .input-container {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+        width: 500px;
+        }
+
+        .input-container label {
+            width: 150px; /* Adjust the width as needed */
+            text-align: right;
+            margin-right: 10px;
+        }
+
+        .input-container input {
+            flex: 1;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <div v-if="ready == false">
+            Something went wrong, please reload this page with Gamehook's mapper loaded. 
+        </div>
+        <div v-else>
+            Gamehook is connected.</div>
+            <br><br><br>
+            This script automatically sets your starting moves when you receive your starter in Oak's lab. Leave any slots blank that you do not wish to modify. 
+            <br> You can simply type the moves in and they will be set automatically when you get your starter, or if you're in the middle of a playthrough
+            you can click the submit button to change them whenever you want. As of the current version, PP will not be modified, so they will retain whatever your current PP is, or be set to a minimum of 5.
+            <br> Be careful of your spelling and capitalization!<br>
+            <div class="input-container">
+                <label for="move1">Move 1:</label>
+                <input type="text" id="move1" v-model="move1">
+                <button @click="setMove1">Submit</button>
+            </div>
+            <div class="input-container">
+                <label for="move2">Move 2:</label>
+                <input type="text" id="move2" v-model="move2">
+                <button @click="setMove2">Submit</button>
+            </div>
+            <div class="input-container">
+                <label for="move3">Move 3:</label>
+                <input type="text" id="move3" v-model="move3">
+                <button @click="setMove3">Submit</button>
+            </div>
+            <div class="input-container">
+                <label for="move4">Move 4:</label>
+                <input type="text" id="move4" v-model="move4">
+                <button @click="setMove4">Submit</button>
+            </div>
+            
+    </div>
+    <script src="https://unpkg.com/@microsoft/signalr@latest/dist/browser/signalr.min.js"></script>
+    <script src="https://unpkg.com/vue@latest/dist/vue.global.js"></script>
+    <script src="http://localhost:8085/dist/gameHookMapperClient.js"></script>
+
+    <script type="text/javascript">
+        const app = Vue.createApp({
+            data() {
+                return {
+                    ready: false,
+                    mapper: null,
+                    move1: '',
+                    move2: '',
+                    move3: '',
+                    move4: '',
+                }
+            },
+            methods: {
+                setMove1() {
+                    if(this.move1!=null && this.move1 != '') {
+                        this.mapper.properties.player.team[0].move1.set(this.move1,false);
+                        if(this.mapper.properties.player.team[0].move1pp.value < 5) {
+                            this.mapper.properties.player.team[0].move1pp.set(5,false);
+                        }
+                    }
+                },
+                setMove2() {
+                    if(this.move2!=null && this.move2 != '' && this.mapper.properties.player.team[0].move1 !='') {
+                        this.mapper.properties.player.team[0].move2.set(this.move2,false);
+                        if(this.mapper.properties.player.team[0].move2pp.value < 5) {
+                            this.mapper.properties.player.team[0].move2pp.set(5,false);
+                        }
+                    }
+                },
+                setMove3() {
+                    if(this.move3!=null && this.move3 != '' && this.mapper.properties.player.team[0].move2 !='') {
+                        this.mapper.properties.player.team[0].move3.set(this.move3,false);
+                        if(this.mapper.properties.player.team[0].move3pp.value < 5) {
+                            this.mapper.properties.player.team[0].move3pp.set(5,false);
+                        }
+                    }
+                },
+                setMove4() {
+                    if(this.move4!=null && this.move4 != '' && this.mapper.properties.player.team[0].move3 !='') {
+                        this.mapper.properties.player.team[0].move4.set(this.move4,false);
+                        if(this.mapper.properties.player.team[0].move4pp.value < 5) {
+                            this.mapper.properties.player.team[0].move4pp.set(5,false);
+                        }
+                    }
+                },
+                
+                loadFromLocalStorage(key) {
+                    const value = localStorage.getItem(key);
+                    if (value !== null) {
+                    this[key] = JSON.parse(value); // Update the data property from localStorage
+                    }
+                },
+                saveToLocalStorage(key) {
+                    localStorage.setItem(key, JSON.stringify(this[key])); // Save the data property to localStorage
+                },
+                loadData() {
+                    this.loadFromLocalStorage('move1');
+                    this.loadFromLocalStorage('move2');
+                    this.loadFromLocalStorage('move3');
+                    this.loadFromLocalStorage('move4');
+                },
+            },
+            computed: {
+                
+            },
+            mounted: async function () {
+                const that = this
+                this.loadData();
+
+                // Setup the GameHook client, and configure it to
+                //Show and hide the UI based off of the ready state.
+                this.mapper = new GameHookMapperClient()
+                this.mapper.onConnected = (x) => this.ready = true
+                this.mapper.onDisconnected = (x) => this.ready = false
+
+                //establish the connection to GameHook.
+                await this.mapper.connect()
+                 // You can listen for properties to change like this
+                // after the connection has been established.
+                // this.mapper.properties.overworld.loadedMap.change(async(x) => {
+                // console.info(`Entered ${x.value || "a new map"} -- setting all encounters.`)});
+				
+                this.mapper.properties.player.team[0].species.change(async (x) => {
+                    setTimeout(() => {
+                        if(this.mapper.properties.overworld.map.value == "Pallet Town - Oak's Lab" && 
+                        this.mapper.properties.player.team[0].level.value == 5) {                    
+                            this.setMove1();
+                            this.setMove2();
+                            this.setMove3();
+                            this.setMove4();
+                            console.log("set moves")
+                        }
+                    }, 2); //delay so gamehook can update
+
+                })
+            },
+            watch: {
+                move1() { this.saveToLocalStorage('move1'); },
+                move2() { this.saveToLocalStorage('move2'); },
+                move3() { this.saveToLocalStorage('move3'); },
+                move4() { this.saveToLocalStorage('move4'); },
+            }
+        }).mount('#app')
+    </script>
+</body>
