@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Name Changer</title>
+    <link rel="icon" href="https://archives.bulbagarden.net/media/upload/5/5b/Spr_3f_025.png" type="image/x-icon">
+    <link rel="stylesheet" href="style.css">
+    <!-- <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@700" rel="stylesheet"> -->
+    <link rel="stylesheet" href="./styles/css-pokemon-gameboy.css">
+
+    <link href="styles.css" rel="stylesheet" \>
+    <style>
+        body {
+            background-color: orange;
+        }
+    
+        .square {
+            width: 1120px;
+            height: 1008px;
+            padding-top: 100%;
+            padding-left: 400px;
+            background-color: #ccc;
+        }
+        .input-container {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+        width: 500px;
+        }
+
+        .input-container label {
+            width: 150px; /* Adjust the width as needed */
+            text-align: right;
+            margin-right: 10px;
+        }
+
+        .input-container input {
+            flex: 1;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <div v-if="ready == false">
+            Something went wrong, please reload this page with Gamehook's mapper loaded. 
+        </div>
+        <div v-else>
+            Gamehook is connected.</div>
+            <br><br><br>
+            This script sets your name.
+            <div class="input-container">
+                <label for="playerName">Player name:</label>
+                <input type="text" id="playerName" v-model="playerName">
+                <button @click="setPlayerName">Submit</button>
+            </div>
+            
+            <div class="input-container">
+                <label for="rivalName">Rival Name:</label>
+                <input type="text" id="rivalName" v-model="rivalName">
+                <button @click="setRivalName">Submit</button>
+            </div>
+            
+            <div class="input-container">
+                <label for="pokemonName">Pokemon Nickname:</label>
+                <input type="text" id="pokemonName" v-model="pokemonName">
+                <button @click="setPokemonName">Submit</button>
+            </div>
+    </div>
+    <script src="https://unpkg.com/@microsoft/signalr@latest/dist/browser/signalr.min.js"></script>
+    <script src="https://unpkg.com/vue@latest/dist/vue.global.js"></script>
+    <script src="http://localhost:8085/dist/gameHookMapperClient.js"></script>
+
+    <script type="text/javascript">
+        const app = Vue.createApp({
+            data() {
+                return {
+                    ready: false,
+                    mapper: null,
+                    playerName: '', 
+                    rivalName: '', 
+                    pokemonName: '',
+
+                }
+            },
+            methods: {
+                setPlayerName() {
+                    if(this.playerName!=null && this.playerName != '') {
+                        this.mapper.properties.player.name.set(this.playerName,false);
+                    }
+                },
+                setRivalName() {
+                    if(this.rivalName!=null && this.rivalName != '') {
+                        this.mapper.properties.rival.name.set(this.rivalName,false);
+                    }
+                },
+                setPokemonName() {
+                    if(this.pokemonName!=null && this.pokemonName != '') {
+                        this.mapper.properties.player.team[0].nickname.set(this.pokemonName,false);
+                    }
+                },
+                loadFromLocalStorage(key) {
+                    const value = localStorage.getItem(key);
+                    if (value !== null) {
+                    this[key] = JSON.parse(value); // Update the data property from localStorage
+                    }
+                },
+                saveToLocalStorage(key) {
+                    localStorage.setItem(key, JSON.stringify(this[key])); // Save the data property to localStorage
+                },
+                loadData() {
+                    this.loadFromLocalStorage('playerName');
+                    this.loadFromLocalStorage('rivalName');
+                    this.loadFromLocalStorage('pokemonName');
+                },
+            },
+            computed: {
+                
+            },
+            mounted: async function () {
+                const that = this
+                this.loadData();
+
+                // Setup the GameHook client, and configure it to
+                //Show and hide the UI based off of the ready state.
+                this.mapper = new GameHookMapperClient()
+                this.mapper.onConnected = (x) => this.ready = true
+                this.mapper.onDisconnected = (x) => this.ready = false
+
+                //establish the connection to GameHook.
+                await this.mapper.connect()
+                 // You can listen for properties to change like this
+                // after the connection has been established.
+                // this.mapper.properties.overworld.loadedMap.change(async(x) => {
+                // console.info(`Entered ${x.value || "a new map"} -- setting all encounters.`)});
+				
+                this.mapper.properties.player.name.change(async (x) => {
+                    this.setPlayerName();
+                })
+                this.mapper.properties.rival.name.change(async (x) => {
+                    this.setRivalName();
+                })
+                this.mapper.properties.player.team[0].nickname.change(async (x) => {
+                    if(this.mapper.properties.overworld.map.value == "Pallet Town - Oak's Lab") {                    
+                        this.setPokemonName();
+                    }
+                })
+            },
+            watch: {
+                playerName() { this.saveToLocalStorage('playerName'); },
+                rivalName() { this.saveToLocalStorage('rivalName'); },
+                pokemonName() { this.saveToLocalStorage('pokemonName'); },
+            }
+        }).mount('#app')
+    </script>
+</body>
