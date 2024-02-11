@@ -163,11 +163,21 @@
                 // after the connection has been established.
                 // this.mapper.properties.overworld.loadedMap.change(async(x) => {
                 // console.info(`Entered ${x.value || "a new map"} -- setting all encounters.`)});
-				
+                var map = { 
+                    "1" : ["map","Pallet Town - Oak's Lab"],
+                    "2" : ["mapGroup","NEW BARK"],
+                    "3" : ["mapName", "ROUTE 101"]
+                }
+				var game = this.mapper.properties.meta.generation.value;
                 this.mapper.properties.player.team[0].species.change(async (x) => {
                     setTimeout(() => {
-                        if(this.mapper.properties.overworld.map.value == "Pallet Town - Oak's Lab" && 
-                        this.mapper.properties.player.team[0].level.value == 5) {                    
+                        // if((/*this.mapper?.properties.overworld?.map?.value == "Pallet Town - Oak's Lab"
+                        // || this.mapper?.properties.overworld?.mapName?.value == "ROUTE 101"
+                        // || */(this.mapper?.properties.overworld?.mapGroup?.value == "NEW BARK" && this.mapper?.properties.overworld?.mapNumber?.value == 5))
+                        // && 
+                        // this.mapper?.properties.player?.team[0].level.value == 5) {    
+                            // console.log(map,game)
+                            if( this.mapper.properties.overworld[map[game][0]] == map[game][1]) {
                             this.setMove1();
                             this.setMove2();
                             this.setMove3();
